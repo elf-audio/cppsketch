@@ -56,7 +56,7 @@ public:
 		};
 	}
 	
-	void update() {
+	void checkForChanges() {
 		watcher.tick();
 	}
 	

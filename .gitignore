@@ -16,10 +16,6 @@
 *.dylib
 *.dll
 
-# Fortran module files
-*.mod
-*.smod
-
 # Compiled Static libraries
 *.lai
 *.la
@@ -33,3 +29,4 @@
 
 .DS_Store
 examples/simple/simple
+examples/audio/audio
