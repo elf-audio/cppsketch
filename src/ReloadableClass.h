@@ -26,6 +26,8 @@
 #include "liveCodeUtils.h"
 #include <sys/stat.h>
 #include <fstream>
+#include <vector>
+
 using namespace std;
 
 template <class T>
@@ -42,9 +44,12 @@ public:
 	function<void()> willCloseDylib;
 	
 	function<void(const string&)> reloadFailed;
+	vector<string> includePaths;
 	
-	void init(string path, string LIBROOT = "") {
+	void init(string path, vector<string> includePaths = {}, string LIBROOT = "") {
+		
 		liveCodeUtils::init();
+		this->includePaths = includePaths;
 		this->LIBROOT = LIBROOT;
 		this->path = findFile(path);
 		
@@ -99,8 +104,12 @@ private:
 	}
 	
 	string getAllIncludes() {
+		string userIncludes = "";
+		for(auto &inc : includePaths) {
+			userIncludes += " -I"+inc + " ";
+		}
 		return " -I. -Isrc"//getAllIncludes(string(SRCROOT))
-
+		+ userIncludes
 		// this is the precomp header + " -include " + string(LIBROOT) + "/mzgl/App.h"
 		//+ getAllIncludes(string(LIBROOT)) + "/mzgl/ "
 		//+ getAllIncludes(string(LIBROOT)+"/../opt/dsp/")

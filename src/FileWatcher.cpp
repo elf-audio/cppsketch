@@ -11,8 +11,6 @@ void FileWatcher::watch(string path) {
 }
 
 void FileWatcher::tick() {
-	
-
 	struct stat fileStat;
 	if(stat(path.c_str(), &fileStat) < 0) {
 		printf("Couldn't stat file %s\n", path.c_str());

@@ -13,10 +13,6 @@ int main(int argc, char * argv[]) {
 		app = ptr;
 		app->setup();
 	};
-
-	dylib.reloadFailed = [](const string &msg) {
-		app = nullptr;
-	};
 	
 	dylib.init("MyLiveApp.h");
 

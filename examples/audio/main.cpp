@@ -54,12 +54,6 @@ int main(int argc, char * argv[]) {
 		audio->setup();
 		audioMutex.unlock();
 	};
-
-	dylib.reloadFailed = [](const string &msg) {
-		audioMutex.lock();
-		audio = nullptr;
-		audioMutex.unlock();
-	};
 	
 	dylib.init("MyLiveAudio.h");
 	
