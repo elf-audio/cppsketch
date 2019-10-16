@@ -26,25 +26,25 @@
 #include "liveCodeUtils.h"
 #include <sys/stat.h>
 #include <fstream>
+using namespace std;
 
-
-class RecompilingDylib {
+template <class T>
+class ReloadableClass {
 public:
 	string LIBROOT = "";
 	
 	Dylib dylib;
 	
-
 	FileWatcher watcher;
 	string path;
 	
-	function<void(void*)> recompiled;
+	function<void(T*)> reloaded;
 	function<void()> willCloseDylib;
 	
-	function<void()> successCallback;
-	function<void(string)> failureCallback;
+	function<void(const string&)> reloadFailed;
 	
-	void setup(string path, string LIBROOT = "") {
+	void init(string path, string LIBROOT = "") {
+		liveCodeUtils::init();
 		this->LIBROOT = LIBROOT;
 		this->path = findFile(path);
 		
@@ -74,8 +74,6 @@ public:
 	}
 	
 	
-	
-	
 private:
 	string lastErrorStr;
 	void recompile() {
@@ -85,15 +83,18 @@ private:
 		string dylibPath = cc();
 		if(dylibPath!="") {
 			
-			loadDylib(dylibPath);
-			printf("Compile took %.0fms\n", (liveCodeUtils::getSeconds() - t)*1000.f);
-			if(successCallback!=nullptr) {
-				successCallback();
+			auto *obj = loadDylib(dylibPath);
+			if(obj != nullptr) {
+				printf("\xE2\x9C\x85\xE2\x9C\x85\xE2\x9C\x85 Success loading \xE2\x9C\x85\xE2\x9C\x85\xE2\x9C\x85\n");
+				printf("Compile took %.0fms\n", (liveCodeUtils::getSeconds() - t)*1000.f);
+				if(reloaded) reloaded(obj);
+			} else {
+				printf("\xE2\x9D\x8C\xE2\x9D\x8C\xE2\x9D\x8C Error: No dice loading dylib \xE2\x9D\x8C\xE2\x9D\x8C\xE2\x9D\x8C\n");
+				if(reloadFailed) reloadFailed("Couldn't read dylib\n");
 			}
+
 		} else {
-			if(failureCallback!=nullptr) {
-				failureCallback(lastErrorStr);
-			}
+			if(reloadFailed) reloadFailed(lastErrorStr);
 		}
 	}
 	
@@ -151,7 +152,6 @@ private:
 		Directory dir(basePath);
 		recursivelyFindAllDirs(dir, dirs);
 		for(int i = 0; i < dirs.size(); i++) {
-		//	printf("%s\n", dirs[i].path.c_str());
 			includes += " -I" + dirs[i].path;
 		}
 		return includes;
@@ -167,7 +167,6 @@ private:
 		outFile << "}\n\n";
 		
 		outFile.close();
-		
 	}
 	
 	string getObjectName(string p) {
@@ -185,44 +184,35 @@ private:
 		return p;
 	}
 	
-	void loadDylib(string dylibPath) {
+	T *loadDylib(string dylibPath) {
 
 		if(dylib.isOpen()) {
 			if(willCloseDylib) willCloseDylib();
 			dylib.close();
 		}
-		dylib.open(dylibPath);
-		void *dlib = dylib.get("getPluginPtr");
-		if(recompiled) {
-			recompiled(dlib);
+
+		if(!dylib.open(dylibPath)) {
+			return nullptr;
 		}
+		return (T*) dylib.get("getPluginPtr");
 	}
 
 	
 	/////////////////////////////////////////////////////////
 	
 	
-	
-	
-	
-	
 	string findFile(string file) {
 		string f = file;
-		if(fileExists(f)) return f;
+		if(File(f).exists()) return f;
 		f = "src/" + f;
-		if(fileExists(f)) return f;
+		if(File(f).exists()) return f;
 		f = "../" + f;
-		if(fileExists(f)) return f;
+		if(File(f).exists()) return f;
 		//f = string(SRCROOT) + "/" + file;
 		//if(fileExists(f)) return f;
 		f = Directory::cwd() + "/" + file;
-		if(fileExists(f)) return f;
+		if(File(f).exists()) return f;
 		printf("Error: can't find source file %s\n", file.c_str());
 		return f;
-	}
-	
-	bool fileExists(string path) {
-		struct stat fileStat;
-		return !(stat(path.c_str(), &fileStat) < 0);
 	}
 };

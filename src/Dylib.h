@@ -1,15 +1,15 @@
 #pragma once
+
 #include <string>
-using namespace std;
 class Dylib {
 public:
 	
-	void open(string path);
-	void *get(string methodName);
+	bool open(std::string path);
+	void *get(std::string methodName);
 	void close();
 	
 	bool isOpen();
 private:
 	
-	void *dylib = NULL;
+	void *dylib = nullptr;
 };
