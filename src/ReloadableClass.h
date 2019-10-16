@@ -68,8 +68,8 @@ public:
 	
 	void precompileHeaders() {
 		if(LIBROOT!="") {
-			string cmd = "g++ -std=c++14 -stdlib=libc++ "
-				+ getAllIncludes(string(LIBROOT))
+			string cmd = "g++ -std=c++11 -stdlib=libc++ "
+				+ liveCodeUtils::includeListToCFlags(liveCodeUtils::getAllDirectories(string(LIBROOT)))
 				+ " " + string(LIBROOT) + "/mzgl/App.h";
 			printf("Precompiling headers: %s\n", cmd.c_str());
 			liveCodeUtils::execute(cmd);
@@ -104,11 +104,8 @@ private:
 	}
 	
 	string getAllIncludes() {
-		string userIncludes = "";
-		for(auto &inc : includePaths) {
-			userIncludes += " -I"+inc + " ";
-		}
-		return " -I. -Isrc"//getAllIncludes(string(SRCROOT))
+		string userIncludes = liveCodeUtils::includeListToCFlags(includePaths);
+		return " "//getAllIncludes(string(SRCROOT))
 		+ userIncludes
 		// this is the precomp header + " -include " + string(LIBROOT) + "/mzgl/App.h"
 		//+ getAllIncludes(string(LIBROOT)) + "/mzgl/ "
@@ -127,8 +124,8 @@ private:
 		string includes = getAllIncludes();
 		
 			
-		
-		string cmd = "g++ -std=c++14 -g -Wno-deprecated-declarations -stdlib=libc++ -c " + cppFile + " -o " + objFile + " "
+		 /* -stdlib=libc++ */
+		string cmd = "g++ -g -std=c++11 -Wno-deprecated-declarations -c " + cppFile + " -o " + objFile + " "
 					+ includes;
 		
 		int exitCode = 0;
@@ -144,27 +141,8 @@ private:
 			return "";
 		}
 	}
-
-	void recursivelyFindAllDirs(Directory curr, vector<Directory> &dirs) {
-		dirs.push_back(curr);
-		curr.list();
-		for(int i = 0; i < curr.size(); i++) {
-			if(curr[i].isDirectory()) {
-				recursivelyFindAllDirs(Directory(curr[i]), dirs);
-			}
-		}
-	}
 	
-	string getAllIncludes(string basePath) {
-		string includes = "";
-		vector<Directory> dirs;
-		Directory dir(basePath);
-		recursivelyFindAllDirs(dir, dirs);
-		for(int i = 0; i < dirs.size(); i++) {
-			includes += " -I" + dirs[i].path;
-		}
-		return includes;
-	}
+	
 	
 	
 	void makeCppFile(string path, string objName) {

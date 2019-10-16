@@ -54,6 +54,40 @@ float liveCodeUtils::getSeconds() {
 }
 
 
+
+void recursivelyFindAllDirs(Directory curr, vector<Directory> &dirs) {
+	dirs.push_back(curr);
+	curr.list();
+	for(int i = 0; i < curr.size(); i++) {
+		if(curr[i].isDirectory()) {
+			recursivelyFindAllDirs(Directory(curr[i]), dirs);
+		}
+	}
+}
+
+
+vector<string> liveCodeUtils::getAllDirectories(string baseDir) {
+	vector<Directory> dirs;
+	Directory dir(baseDir);
+	recursivelyFindAllDirs(dir, dirs);
+	vector<string> ret;
+	for(auto &d : dirs) {
+		ret.push_back(d.path);
+	}
+	return ret;
+}
+
+
+std::string liveCodeUtils::includeListToCFlags(const std::vector<std::string> &includes) {
+	string str;
+	for(auto &inc : includes) {
+		str += " -I"+inc + " ";
+	}
+	return str;
+}
+
+
+
 File::File(string path) {
 	this->path = path;
 }
@@ -76,6 +110,9 @@ string File::getExtension() const {
 		return "";
 	}
 }
+
+
+
 
 #include <dirent.h>
 #include <vector>
@@ -109,6 +146,7 @@ bool File::exists() {
 	return stat(path.c_str(),&stFileInfo)==0; 
 	#endif
 }
+
 
 
 

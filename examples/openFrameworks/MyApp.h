@@ -5,11 +5,14 @@
 class MyApp : public ofBaseApp {
 public:
 	void setup() {
-		
+		ofBackground(0);
+		ofSetCircleResolution(66);
 	}
 	
 	void draw() {
-		
+		ofSetColor(255, 255, 0);
+		ofDrawCircle(100, 100, 100);
+		ofDrawRectangle(100, 100, 100, 100);
 	}
 	
 	void mouseMoved(int x, int y) {

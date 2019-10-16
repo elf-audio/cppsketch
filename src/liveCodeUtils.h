@@ -16,7 +16,12 @@ namespace liveCodeUtils {
 	std::string execute(std::string cmd, int *outExitCode = nullptr);
 	float getSeconds();
 	std::string getCwd();
+	
+	// this lists all directories and their subdirectories
+	std::vector<std::string> getAllDirectories(std::string baseDir);
+	std::string includeListToCFlags(const std::vector<std::string> &includes);
 };
+
 
 
 class File {
