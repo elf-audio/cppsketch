@@ -1,5 +1,6 @@
 #include "ofMain.h"
 #include "ofApp.h"
+#include "ofxCppSketch.h"
 
 //========================================================================
 int main( ){
@@ -9,6 +10,5 @@ int main( ){
 	// this kicks off the running of my app
 	// can be OF_WINDOW or OF_FULLSCREEN
 	// pass in width and height too:
-	ofRunApp( new ofApp());
-
+	ofRunApp(new ofxCppSketch("ofApp", __FILE__));
 }

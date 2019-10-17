@@ -33,7 +33,6 @@ using namespace std;
 template <class T>
 class ReloadableClass {
 public:
-	string LIBROOT = "";
 	
 	Dylib dylib;
 	
@@ -45,17 +44,34 @@ public:
 	
 	function<void(const string&)> reloadFailed;
 	vector<string> includePaths;
+	string prefixHeader;
+	string cppFile = "";
 	
-	void init(string path, vector<string> includePaths = {}, string LIBROOT = "") {
+	/**
+	 * Parameters:
+	 *  path - path to the header file of the live class - must have the same name as the class itself
+	 *  includePaths - optional all the paths to include
+	 *  headerToPrecompile - optional - if you pass in a main header file, it will be precompiled for faster loading times.
+	 */
+	void init(const string &path, const vector<string> &includePaths = {}, const string &headerToPrecompile = "") {
 		
 		liveCodeUtils::init();
 		this->includePaths = includePaths;
-		this->LIBROOT = LIBROOT;
 		this->path = findFile(path);
 		
-		precompileHeaders();
+		prefixHeader = headerToPrecompile;
+		if(headerToPrecompile!="") {
+			precompileHeader(headerToPrecompile);
+		}
 		
 		watcher.watch(this->path);
+		
+		cppFile = getCppFileForHeader(this->path);
+		
+		if(cppFile!="") {
+			watcher.watch(this->cppFile);
+		}
+		
 		watcher.touched = [this]() {
 			recompile();
 		};
@@ -65,17 +81,22 @@ public:
 		watcher.tick();
 	}
 	
+	string getCppFileForHeader(string p) {
+		int lastDot = p.rfind('.');
+		if(lastDot==-1) return "";
+		string cpp = p.substr(0, lastDot) + ".cpp";
+		printf("cpp file is at %s\n", cpp.c_str());
+		if(File(cpp).exists()) return cpp;
+		return "";
+	}
 	
-	void precompileHeaders() {
-		if(LIBROOT!="") {
-			string cmd = "g++ -std=c++11 -stdlib=libc++ "
-				+ liveCodeUtils::includeListToCFlags(liveCodeUtils::getAllDirectories(string(LIBROOT)))
-				+ " " + string(LIBROOT) + "/mzgl/App.h";
-			printf("Precompiling headers: %s\n", cmd.c_str());
-			liveCodeUtils::execute(cmd);
-		} else {
-			printf("Warning: not using any precompiled headers\n");
-		}
+	void precompileHeader(const string &headerToPrecompile) {
+		
+		string cmd = "g++ -std=c++11 -x c++-header -stdlib=libc++ "
+			+ liveCodeUtils::includeListToCFlags(includePaths)
+			+ " " + headerToPrecompile;
+		printf("Precompiling headers: %s\n", cmd.c_str());
+		liveCodeUtils::execute(cmd);
 	}
 	
 	
@@ -105,7 +126,7 @@ private:
 	
 	string getAllIncludes() {
 		string userIncludes = liveCodeUtils::includeListToCFlags(includePaths);
-		return " "//getAllIncludes(string(SRCROOT))
+		return " -I. "//getAllIncludes(string(SRCROOT))
 		+ userIncludes
 		// this is the precomp header + " -include " + string(LIBROOT) + "/mzgl/App.h"
 		//+ getAllIncludes(string(LIBROOT)) + "/mzgl/ "
@@ -123,9 +144,12 @@ private:
 
 		string includes = getAllIncludes();
 		
-			
-		 /* -stdlib=libc++ */
-		string cmd = "g++ -g -std=c++11 -Wno-deprecated-declarations -c " + cppFile + " -o " + objFile + " "
+		string prefixHeaderFlag = "";
+		if(prefixHeader!="") {
+			prefixHeaderFlag = "-include " + prefixHeader + " ";
+		}
+		
+		string cmd = "g++ -g -std=c++11 -stdlib=libc++ "+prefixHeaderFlag+" -Wno-deprecated-declarations -c " + cppFile + " -o " + objFile + " "
 					+ includes;
 		
 		int exitCode = 0;
@@ -151,6 +175,19 @@ private:
 		outFile << "#include \""+objName+".h\"\n\n";
 		outFile << "extern \"C\" {\n\n";
 		outFile << "\n\nvoid *getPluginPtr() {return new "+objName+"(); };\n\n";
+		if(cppFile!="") {
+			// include the contents of the cpp file if it exists
+			ifstream inFile(cppFile);
+			string line;
+			if (inFile.is_open()) {
+			  while ( getline (inFile,line) ) {
+				outFile << line << '\n';
+			  }
+			  inFile.close();
+			} else {
+				printf("Error reading %s\n", cppFile.c_str());
+			}
+		}
 		outFile << "}\n\n";
 		
 		outFile.close();

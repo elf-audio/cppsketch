@@ -6,24 +6,28 @@
 
 using namespace std;
 
-void FileWatcher::watch(string path) {
-	this->path = path;	
+void FileWatcher::watch(const string &path) {
+	watchedFiles.emplace_back(path);
 }
 
+
+
 void FileWatcher::tick() {
-	struct stat fileStat;
-	if(stat(path.c_str(), &fileStat) < 0) {
-		printf("Couldn't stat file %s\n", path.c_str());
-		char d[512];
-		getcwd(d, 512);
-		printf("Curr Dir: %s\n", d);
-		return;
+	bool hasBeenTouched = false;
+	for(auto &file : watchedFiles) {
+		struct stat fileStat;
+		if(stat(file.path.c_str(), &fileStat) < 0) {
+			printf("Couldn't find file %s\n", file.path.c_str());
+			return;
+		}
+		long currUpdateTime = fileStat.st_mtime;
+		if(currUpdateTime!=file.prevUpdateTime) {
+			hasBeenTouched = true;
+		}
+		file.prevUpdateTime = currUpdateTime;
 	}
-	long currUpdateTime = fileStat.st_mtime;
-	if(currUpdateTime!=prevUpdateTime) {
-		if(touched) touched();
-	}
-	prevUpdateTime = currUpdateTime;
+	
+	if(hasBeenTouched && touched!=nullptr) touched();
 }
 
 
