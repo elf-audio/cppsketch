@@ -14,10 +14,10 @@ public:
 	int i = 0;
 
 	void update() override { 
-		i++;
+		i+=2;
 		printf("update %d\n", i);
 
 		// sleep for 0.1 seconds
-		usleep(1000*100);
+		usleep(1000*1000);
 	}
 };

@@ -20,6 +20,9 @@ namespace liveCodeUtils {
 	// this lists all directories and their subdirectories
 	std::vector<std::string> getAllDirectories(std::string baseDir);
 	std::string includeListToCFlags(const std::vector<std::string> &includes);
+
+	// this returns a list of paths to all .h files in the baseDir
+	std::vector<std::string> getAllHeaderFiles(std::string baseDir);
 };
 
 

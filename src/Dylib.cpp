@@ -10,6 +10,9 @@ bool Dylib::open(string path) {
 	close();
 	
 	dylib = dlopen(path.c_str(), RTLD_LAZY);
+	if(dylib==nullptr) {
+		printf("Got dlopen error: %s\n", dlerror());
+	}
 	return dylib != nullptr;
 }
 

@@ -77,6 +77,17 @@ vector<string> liveCodeUtils::getAllDirectories(string baseDir) {
 	return ret;
 }
 
+std::vector<std::string> liveCodeUtils::getAllHeaderFiles(std::string baseDir) {
+	vector<string> ret;
+	Directory dir(baseDir);
+	dir.allowExtension("h");
+	dir.list();
+	for(int i = 0; i < dir.size(); i++) {
+		ret.push_back(dir[i].path);
+	}
+	return ret;
+}
+
 
 std::string liveCodeUtils::includeListToCFlags(const std::vector<std::string> &includes) {
 	string str;

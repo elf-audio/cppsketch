@@ -7,7 +7,18 @@
 using namespace std;
 
 void FileWatcher::watch(const string &path) {
+	// this checks to see if the file has already been added, and only
+	// adds if it's not already here.
+	// should really be a set but can't modify when iterating
+	for(auto &v : watchedFiles) {
+	
+		if(v.path==path) {
+			printf("Already has %s\n", path.c_str());
+			return;
+		}
+	}
 	watchedFiles.emplace_back(path);
+	printf("Added %s\n", path.c_str());
 }
 
 
