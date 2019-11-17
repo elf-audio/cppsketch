@@ -2,7 +2,7 @@
 Simple system for hot-reloading C++ classes in order to sketch ideas and algorithms. It's quite naive, in that it just starts your program again and doesn't save variables. Also, at the moment, it only works for one class at a time.
 
 (Mac only for now)
-
+Here's a video playlist on YouTube for how to use it: https://www.youtube.com/watch?v=-JlMIAOluUg&list=PL3QE2n0UDmRp2R7x-nB5dz1BPHVuBuKZS
 It has no dependencies - everything is included in here. (except if you want to run the audio example, see below)
 
 ## VIDEO
@@ -30,3 +30,4 @@ To run it, type `./audio` - now you can edit MyLiveAudio.h live, and every time 
 
 ## openFrameworks
 Please see the readme in the examples/openFrameworks directory to see how to do that, or go here for an addon https://github.com/elf-audio/ofxCppSketch (probably easier)
+
