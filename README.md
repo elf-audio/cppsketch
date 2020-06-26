@@ -31,3 +31,7 @@ To run it, type `./audio` - now you can edit MyLiveAudio.h live, and every time 
 ## openFrameworks
 Please see the readme in the examples/openFrameworks directory to see how to do that, or go here for an addon https://github.com/elf-audio/ofxCppSketch (probably easier)
 
+## linux / raspberry pi
+At the moment, only the simple and audio examples work. You may need to install libasound2-dev. You can do this by typing `sudo apt install libasound2-dev`
+
+
