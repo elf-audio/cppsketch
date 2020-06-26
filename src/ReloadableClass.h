@@ -148,8 +148,12 @@ private:
 		if(prefixHeader!="") {
 			prefixHeaderFlag = "-include " + prefixHeader + " ";
 		}
-		
-		string cmd = "g++ -g -std=c++11 -stdlib=libc++ "+prefixHeaderFlag+" -Wno-deprecated-declarations -c " + cppFile + " -o " + objFile + " "
+		string cppFlags = "";
+
+	#ifdef __APPLE__
+		cppFlags += " -stdlib=libc++ "
+	#endif
+		string cmd = "g++ -g -std=c++11 "+cppFlags+" "+prefixHeaderFlag+" -Wno-deprecated-declarations -c " + cppFile + " -o " + objFile + " "
 					+ includes;
 		
 		int exitCode = 0;
@@ -157,7 +161,13 @@ private:
 		
 		//printf("Exit code : %d\n", exitCode);
 		if(exitCode==0) {
-			cmd = "g++ -dynamiclib -g -undefined dynamic_lookup -o "+dylibPath + " " + objFile;
+			string linkerFlags = "";
+			#ifdef __APPLE__
+				linkerFlags += " -dynamiclib -undefined dynamic_lookup ";
+			#else
+				linkerFlags = " -shared ";
+			#endif	
+			cmd = "g++ -g "+linkerFlags+" -o "+dylibPath + " " + objFile;
 			liveCodeUtils::execute(cmd);
 			return dylibPath;
 		} else {

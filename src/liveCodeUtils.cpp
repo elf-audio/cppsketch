@@ -10,6 +10,8 @@
 #include <chrono>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <algorithm>
+#include <cstring>
 
 using namespace std;
 namespace liveCodeUtils {
@@ -21,7 +23,7 @@ void liveCodeUtils::init() {
 }
 
 string liveCodeUtils::execute(string cmd, int *outExitCode) {
-#ifdef __APPLE__
+#ifndef _WIN32
 	printf("Executing %s", cmd.c_str());
 	cmd += " 2>&1";
 	FILE* pipe = popen(cmd.c_str(), "r");

@@ -4,6 +4,7 @@
 #include "ReloadableClass.h"
 #include "LiveAudio.h"
 #include "RtAudio.h"
+#include <mutex>
 
 LiveAudio *audio = nullptr;
 

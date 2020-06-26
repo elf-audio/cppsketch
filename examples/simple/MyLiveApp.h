@@ -14,7 +14,7 @@ public:
 	int i = 0;
 
 	void update() override { 
-		i+=2;
+		i+=3;
 		printf("update %d\n", i);
 
 		// sleep for 0.1 seconds
