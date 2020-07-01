@@ -151,7 +151,7 @@ private:
 		string cppFlags = "";
 
 	#ifdef __APPLE__
-		cppFlags += " -stdlib=libc++ "
+		cppFlags += " -stdlib=libc++ ";
 	#endif
 		string cmd = "g++ -g -std=c++11 "+cppFlags+" "+prefixHeaderFlag+" -Wno-deprecated-declarations -c " + cppFile + " -o " + objFile + " "
 					+ includes;
