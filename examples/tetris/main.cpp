@@ -63,7 +63,6 @@ int main(int argc, char * argv[]) {
 	};
 	
 	dylib.init("MyLiveAudio.h");
-	
 
 	startRtAudio();
 

@@ -1,7 +1,5 @@
 #include "LiveAudio.h"
 
-
-
 class MyLiveAudio : public LiveAudio {
 public:
 
