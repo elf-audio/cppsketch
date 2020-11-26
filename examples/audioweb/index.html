@@ -1,0 +1,523 @@
+<html>
+<head>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js" integrity="sha512-bLT0Qm9VnAYZDflyKcBaQ2gg0hSYNQrJ8RilYldYQ1FxQYoCLtUjuuRuZo+fjqhx/qtq/1itJ0C2ejDxltZVFg==" crossorigin="anonymous"></script>
+	<style type="text/css">
+		body {
+			font-family: sans-serif;
+			font-size: 80%;
+		}
+		.modulation {
+			border:1px #aaa solid;
+			width:30%;
+			padding:0.5em;
+			margin-right: 0.3em;
+			display:inline-block;
+		}
+
+		.lfo, .envelope, .value {
+			border:1px #ccc solid;
+			padding:0.5em;
+			display:grid;
+			grid-row-gap: 0.5em;
+
+			grid-template-columns: 25% 55% 20%;
+		}
+		.lfo h3, .envelope h3, .value h3 {
+			grid-column: 1/4;
+		}
+		h2 {
+			margin:0;
+		}
+		h3 {
+			margin:-0.45em -0.45em 0 -0.45em;
+			padding:0.5em;
+			background-color:#eeeeee;
+
+		}
+		.envelope, .lfo, .value {
+			margin-top: 0.5em;
+		}
+		
+		.patternDivider {
+			width: 100%;
+			border: 1px black solid;
+		}
+		#pattern {
+			display: flex;
+			justify-content: space-between;
+			border: 1px black solid;
+			padding: 0.5em;
+			margin: 0.5em;
+			margin-left:0;
+			width: 90%;
+		}
+
+		label {
+			width: 20%;
+			display: inline;
+		}
+
+		input[type=range] {
+			display:inline-block;
+		}
+
+		.readout {
+			/*display:inline;*/
+			text-align:center;
+			border:1px #ccc solid;
+			border-radius: 0.25em;
+		}
+
+
+
+
+
+
+
+/************************************************/
+input[type=checkbox] {
+	-webkit-appearance: none;
+	background-color: #fafafa;
+	border: 1px solid #cacece;
+	/*box-shadow: 0 1px 2px rgba(0,0,0,0.05), inset 0px -15px 10px -12px rgba(0,0,0,0.05);*/
+	padding: 9px;
+	border-radius: 3px;
+	display: inline-block;
+
+	width: 20%;
+	height: 3em;
+}
+
+input[type=checkbox]:active, input[type=checkbox]:checked:active {
+	/*box-shadow: 0 1px 2px rgba(0,0,0,0.05), inset 0px 1px 3px rgba(0,0,0,0.1);*/
+}
+
+input[type=checkbox]:checked {
+	background-color: #3399ee;
+}
+input[type=checkbox].beat {
+	background-color:red;
+}
+
+
+/************************************************/
+
+
+	</style>
+	<script language="javascript">
+
+		
+
+		class Envelope {
+			constructor() {
+				this.attack = 0.0;
+				this.release = 0.0;
+				this.curve = 0.0;
+			}
+		}
+
+
+		class LFO {
+			constructor() {
+				this.speed = 0.0;
+				this.depth = 0.0;
+				this.wave = "SINE";
+			}
+		}
+
+
+		class Modulation {
+			constructor() {
+				this.lfo = new LFO();
+				this.envelope = new Envelope();
+			}
+		}
+		
+		class Voice { 
+			constructor() {
+				this.pitch = 0.0;
+				this.cutoff = 0.0;
+				this.resonance = 0.0;
+				this.level = 0.7;
+				this.pitchMod = new Modulation();
+				this.filterMod = new Modulation();
+				this.ampMod = new Modulation();
+				this.pattern = [];
+				for(let i = 0; i < 16; i++) {
+					this.pattern.push(0);
+				}
+			}
+		}
+
+		let voices = [];
+		let currVoice = 0;
+		
+		for(let i = 0; i < 6; i++) {
+			voices.push(new Voice());	
+		}
+		
+
+		function setBeat(b) {
+			let pt = $("#pattern input");
+			for(let i = 0; i < pt.length; i++) {
+				if(i==b) {
+					$(pt[i]).addClass("beat");
+				} else { 
+					$(pt[i]).removeClass("beat");
+				}
+			}
+		}
+
+		function sendVoiceParameter(name, value) {
+			if(window.webkit) {
+				window.webkit.messageHandlers.updateHandler.postMessage({"function":"sendVoiceParameter", "args": [currVoice, name, value]});
+			}
+		}
+	
+		function sendSequenceChange(which, value) {
+			if(window.webkit) {
+				window.webkit.messageHandlers.updateHandler.postMessage({"function":"sendSequenceChange", "args": [currVoice, which, value]});
+			}
+		}
+
+
+		function pointPattern(patternObj) {
+			let pt = $("#pattern input");
+
+			for(let i = 0; i < pt.length; i++) {
+				$(pt[i]).prop("checked", patternObj[i]!=0);
+				$(pt[i]).off();
+				$(pt[i]).on("click", function() {
+					let val = $(this).prop("checked");
+					sendSequenceChange(i, val);
+					patternObj[i] = val?1:0;
+				});
+			}
+		}
+
+
+
+		let desc = [
+			// "css selector", "object in voice"
+			['#pitchMod input[name="pitch"]', 	"pitch"],
+			['#pitchMod input[name="speed"]', 	"pitchMod.lfo.speed"],
+			['#pitchMod input[name="depth"]', 	"pitchMod.lfo.depth"],
+			['#pitchMod input[name="attack"]', 	"pitchMod.envelope.attack"],
+			['#pitchMod input[name="release"]', "pitchMod.envelope.release"],
+			['#pitchMod input[name="curve"]',   "pitchMod.envelope.curve"],
+			['#pitchMod select[name="wave"]', 	"pitchMod.lfo.wave"],
+
+
+			['#filterMod input[name="cutoff"]', 	"cutoff"],
+			['#filterMod input[name="resonance"]', 	"resonance"],
+			['#filterMod input[name="speed"]', 		"filterMod.lfo.speed"],
+			['#filterMod input[name="depth"]', 		"filterMod.lfo.depth"],
+			['#filterMod input[name="attack"]', 	"filterMod.envelope.attack"],
+			['#filterMod input[name="release"]', 	"filterMod.envelope.release"],
+			['#filterMod input[name="curve"]', 		"filterMod.envelope.curve"],
+			['#filterMod select[name="wave"]',   	"filterMod.lfo.wave"],
+
+			['#ampMod input[name="level"]', 	"level"],
+			['#ampMod input[name="speed"]', 	"ampMod.lfo.speed"],
+			['#ampMod input[name="depth"]', 	"ampMod.lfo.depth"],
+			['#ampMod select[name="wave"]',   	"ampMod.lfo.wave"],
+			['#ampMod input[name="attack"]', 	"ampMod.envelope.attack"],
+			['#ampMod input[name="release"]', 	"ampMod.envelope.release"],
+			['#ampMod input[name="curve"]', 	"ampMod.envelope.curve"]
+		];
+
+
+
+		function sendPresetToEngine() {
+			if(window.webkit) {
+				for(let v = 0; v < voices.length; v++) {
+					for(let i = 0; i < desc.length; i++) {
+			
+						window.webkit.messageHandlers.updateHandler.postMessage({
+							"function":"sendVoiceParameter", 
+							"args": [v, desc[i][1], lookUp(voices[v], desc[i][1])]
+						});
+					}
+
+					for(let i = 0; i < voices[v].pattern.length; i++) {
+
+						window.webkit.messageHandlers.updateHandler.postMessage({
+							"function":"sendSequenceChange", 
+							"args": [v, i, voices[v].pattern[i]]
+						});
+					}
+				}
+			}
+		}
+
+		// console.log(JSON.stringify(voices));
+
+		jQuery.fn.tagName = function() {
+			return this.prop("tagName");
+		};
+
+		function isSlider(el) {
+			return el.tagName()=="INPUT" && el.attr("type")=="range";
+		}
+
+
+		function index(obj,i) {return obj[i]}
+
+
+		function lookUp(obj, id) {
+			return id.split('.').reduce(index, obj);
+		}
+		function assign(obj, id, value) {
+
+			let parts = id.split('.');
+			for(let i = 0; i < parts.length-1; i++) {
+				obj = obj[parts[i]];
+			}
+			obj[parts[parts.length-1]] = value;
+		}
+
+		function pointToValue(obj, selector, id) {
+			
+			let el = $(selector);
+			el.off();
+			if(isSlider(el)) {
+				el.on('input', function(){
+					let val = $(this).val() / 100.0;
+					// voiceObj[attr] = val;
+					assign(obj, id, val);
+					$(this).next(".readout").html(""+val.toPrecision(2));
+					sendVoiceParameter(id, val);
+					console.log(voices[0]);
+				});
+				let v = lookUp(obj, id);
+
+				el.val(v*100.0);
+				el.next(".readout").html("" + v);
+			} else if(el.tagName()=="SELECT") {
+				el.on('change', function() {
+					assign(obj, id, el.val());
+					sendVoiceParameter(id, el.val());
+				});
+				el.val(lookUp(obj, id));
+			}
+		}
+
+
+
+		function pointToVoice(voiceId) {
+			currVoice = voiceId;
+			let v = voices[voiceId];
+			// $(document).on('input')
+			
+
+			for(let i = 0; i < desc.length; i++) {
+
+				pointToValue(voices[voiceId], desc[i][0], desc[i][1]);
+			}
+
+
+			pointPattern(voices[voiceId].pattern);
+		}
+
+		$(document).ready(function() {
+
+			// $("input[type=range]").val(0);
+
+			pointToVoice(0);
+			$("#voiceSelector").change(function() {
+				let selectedIndex = $(this).prop("selectedIndex");
+				pointToVoice(selectedIndex);
+			});
+		});
+	</script>
+</head>
+<body>
+
+<a href="#" onclick="sendPresetToEngine()">SEND</a>
+	<div>
+		<div>
+			<select id="voiceSelector">
+				<option>Voice 1</option>
+				<option>Voice 2</option>
+				<option>Voice 3</option>
+				<option>Voice 4</option>
+				<option>Voice 5</option>
+				<option>Voice 6</option>
+			</select>
+		</div>
+		<div class="modulation" id="pitchMod">
+			<h2>Pitch</h2>
+
+			<div class="value">
+				<label>Pitch</label>
+				<input type="range" name="pitch" step="0.1"/>
+				<div class="readout">0.0</div>
+			</div>
+
+			<div class="lfo">
+				
+				<h3>LFO</h3>
+				<label>Speed</label>
+				<input type="range" name="speed" />
+				<div class="readout">0.0</div>
+
+				<label>Depth</label>
+				<input type="range" name="depth" />
+				<div class="readout">0.0</div>
+
+				<label>Wave</label>
+				<select name="wave">
+					<option>SINE</option>
+					<option>SQUARE</option>
+					<option>RANDOM</option>
+				</select>
+
+			</div>
+
+			<div class="envelope">
+				<h3>Envelope</h3>
+
+				<label>Attack</label>
+				<input type="range" name="attack" />
+				<div class="readout">0.0</div>
+
+				<label>Release</label>
+				<input type="range" name="release" />
+				<div class="readout">0.0</div>
+
+				<label>Curve</label>
+				<input type="range" name="curve" />
+				<div class="readout">0.0</div>
+			</div>
+		</div>
+
+		<div class="modulation" id="filterMod">
+			<h2>Filter</h2>
+
+			<div class="value">
+				<label>Cutoff</label>
+				<input type="range" name="cutoff" />
+				<div class="readout">0.0</div>
+				<label>Res</label>
+				<input type="range" name="resonance" />
+				<div class="readout">0.0</div>
+			</div>
+
+
+			<div class="lfo">
+				<h3>LFO</h3>
+
+				<label>Speed</label>
+				<input type="range" name="speed" />
+				<div class="readout">0.0</div>
+
+				<label>Depth</label>
+				<input type="range" name="depth" />
+				<div class="readout">0.0</div>
+
+				<label>Wave</label>
+				<select name="wave">
+					<option>SINE</option>
+					<option>SQUARE</option>
+					<option>RANDOM</option>
+				</select>
+
+			</div>
+			<div class="envelope">
+				<h3>Envelope</h3>
+
+				<label>Attack</label>
+				<input type="range" name="attack" />
+				<div class="readout">0.0</div>
+
+				<label>Release</label>
+				<input type="range" name="release" />
+				<div class="readout">0.0</div>
+
+				<label>Curve</label>
+				<input type="range" name="curve" />
+				<div class="readout">0.0</div>
+			</div>
+		</div>
+
+		<div class="modulation" id="ampMod">
+			<h2>Amplitude</h2>
+			<div class="value">
+				<label>Level</label>
+				<input type="range" name="level" />
+				<div class="readout">0.0</div>
+			</div>
+			<div class="lfo">
+				<h3>LFO</h3>
+
+				<label>Speed</label>
+				<input type="range" name="speed" />
+				<div class="readout">0.0</div>
+
+				<label>Depth</label>
+				<input type="range" name="depth" />
+				<div class="readout">0.0</div>
+
+				<label>Wave</label>
+				<select name="wave">
+					<option>SINE</option>
+					<option>SQUARE</option>
+					<option>RANDOM</option>
+				</select>
+
+			</div>
+			<div class="envelope">
+				<h3>Envelope</h3>
+
+				<label>Attack</label>
+				<input type="range" name="attack" />
+				<div class="readout">0.0</div>
+
+				<label>Release</label>
+				<input type="range" name="release" />
+				<div class="readout">0.0</div>
+
+				<label>Curve</label>
+				<input type="range" name="curve" />
+				<div class="readout">0.0</div>
+			</div>
+		</div>
+
+
+	</div>
+	<div id="pattern">
+		<div class="patternDivider">
+			<input type="checkbox" />
+			<input type="checkbox" />
+			<input type="checkbox" />
+			<input type="checkbox" />
+		</div>
+		<div class="patternDivider">
+			<input type="checkbox" />
+			<input type="checkbox" />
+			<input type="checkbox" />
+			<input type="checkbox" />
+		</div>
+		<div class="patternDivider">
+			<input type="checkbox" />
+			<input type="checkbox" />
+			<input type="checkbox" />
+			<input type="checkbox" />
+		</div>
+		<div class="patternDivider">
+			<input type="checkbox" />
+			<input type="checkbox" />
+			<input type="checkbox" />
+			<input type="checkbox" />
+		</div>
+	</div>
+	<pre>
+		
+		What I would like:
+		- pan control
+		- buffer at a time processing with delayed triggers
+		- actual FM
+		
+	</pre>
+</body>
+</html>
