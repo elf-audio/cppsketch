@@ -263,7 +263,11 @@ public:
 		// iii = (iii+1) %100;
 	}
 
-	void jsReceived(const std::string &s, const std::vector<std::string> &params) override {
+	void setParameter(const std::string &key, const std::string &value) override {
+
+	}
+
+	void jsReceived(const std::string &s, const std::vector<std::string> &params) {
 		// printf("%s\n", s.c_str());
 		if(s=="sendVoiceParameter") {
 			if(params.size()!=3) {

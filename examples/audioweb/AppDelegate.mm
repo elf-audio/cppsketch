@@ -247,13 +247,11 @@ void startRtAudio() {
 	[window makeMainWindow];
 
 }
-
+/*
 
 - (void)userContentController:(WKUserContentController *)userContentController didReceiveScriptMessage:(WKScriptMessage *)message {
-	// std::string s;
 	NSDictionary *dict = message.body;
 	NSString *func = dict[@"function"];
-	// NSLog(@"%@", dict[@"args"]);
 	NSArray *args = dict[@"args"];
 
 	string funcStr = string([func UTF8String]);
@@ -271,6 +269,37 @@ void startRtAudio() {
 		audio->jsReceived(funcStr, params);
 	}
 	audioMutex.unlock();
+	// [webView evaluateJavaScript:[NSString stringWithUTF8String:s.c_str()] completionHandler:nil];
+
+}
+*/
+
+- (void)userContentController:(WKUserContentController *)userContentController didReceiveScriptMessage:(WKScriptMessage *)message {
+	NSDictionary *dict = message.body;
+	std::string key = [dict[@"key"] UTF8String];
+	std::string value = [dict[@"value"] UTF8String];
+
+	audioMutex.lock();
+	if(audio!=nullptr) {
+		audio->setParameter(key, value);
+	}
+	audioMutex.unlock();
+
+	// string funcStr = string([func UTF8String]);
+	// vector<string> params;
+	// for(int i = 0; i < [args count]; i++) {
+	// 	id s = [args objectAtIndex: i];
+	// 	if([s isKindOfClass: [NSString class]]) {
+	// 		params.push_back([s UTF8String]);
+	// 	} else {
+	// 		params.push_back([[s stringValue] UTF8String]);
+	// 	}
+	// }
+	// audioMutex.lock();
+	// if(audio!=nullptr) {
+	// 	audio->jsReceived(funcStr, params);
+	// }
+	// audioMutex.unlock();
 	// [webView evaluateJavaScript:[NSString stringWithUTF8String:s.c_str()] completionHandler:nil];
 
 }

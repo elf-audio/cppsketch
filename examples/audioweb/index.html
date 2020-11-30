@@ -168,16 +168,25 @@ input[type=checkbox].beat {
 			}
 		}
 
-		function sendVoiceParameter(name, value) {
+
+		function sendMessage(key, value) {
 			if(window.webkit) {
-				window.webkit.messageHandlers.updateHandler.postMessage({"function":"sendVoiceParameter", "args": [currVoice, name, value]});
+				window.webkit.messageHandlers.updateHandler.postMessage({"key": key, "value": ""+value});
 			}
+		}
+
+		function sendVoiceParameter(name, value) {
+			// if(window.webkit) {
+			// 	window.webkit.messageHandlers.updateHandler.postMessage({"function":"sendVoiceParameter", "args": [currVoice, name, value]});
+			// }
+			sendMessage("param_" + currVoice + "_" + name , value);
 		}
 	
 		function sendSequenceChange(which, value) {
-			if(window.webkit) {
-				window.webkit.messageHandlers.updateHandler.postMessage({"function":"sendSequenceChange", "args": [currVoice, which, value]});
-			}
+			// if(window.webkit) {
+			// 	window.webkit.messageHandlers.updateHandler.postMessage({"function":"sendSequenceChange", "args": [currVoice, which, value]});
+			// }
+			sendMessage("seq_" + currVoice + "_"+which, value);
 		}
 
 
@@ -232,19 +241,20 @@ input[type=checkbox].beat {
 			if(window.webkit) {
 				for(let v = 0; v < voices.length; v++) {
 					for(let i = 0; i < desc.length; i++) {
-			
-						window.webkit.messageHandlers.updateHandler.postMessage({
-							"function":"sendVoiceParameter", 
-							"args": [v, desc[i][1], lookUp(voices[v], desc[i][1])]
-						});
+						sendMessage("param_" + v + "_" + descs[i][1], lookUp(voices[v], desc[i][1]));
+
+						// window.webkit.messageHandlers.updateHandler.postMessage({
+						// 	"function":"sendVoiceParameter", 
+						// 	"args": [v, desc[i][1], lookUp(voices[v], desc[i][1])]
+						// });
 					}
 
 					for(let i = 0; i < voices[v].pattern.length; i++) {
-
-						window.webkit.messageHandlers.updateHandler.postMessage({
-							"function":"sendSequenceChange", 
-							"args": [v, i, voices[v].pattern[i]]
-						});
+						sendMessage("seq_" + v + "_" + i, voices[v].pattern[i]);
+						// window.webkit.messageHandlers.updateHandler.postMessage({
+						// 	"function":"sendSequenceChange", 
+						// 	"args": [v, i, voices[v].pattern[i]]
+						// });
 					}
 				}
 			}
