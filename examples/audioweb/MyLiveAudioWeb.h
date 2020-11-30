@@ -263,8 +263,93 @@ public:
 		// iii = (iii+1) %100;
 	}
 
-	void setParameter(const std::string &key, const std::string &value) override {
 
+
+	vector<string> split(const string& s, char c) {
+		vector<string> v;
+		string::size_type i = 0;
+		string::size_type j = s.find(c);
+
+		while (j != string::npos) {
+			v.push_back(s.substr(i, j-i));
+			i = ++j;
+			j = s.find(c, j);
+
+			if (j == string::npos)
+				v.push_back(s.substr(i, s.length()));
+		}
+		return v;
+	}
+
+
+
+	void setParameter(const std::string &key, const std::string &value) override {
+		printf("%s = %s\n", key.c_str(), value.c_str());
+		auto parts = split(key, '_');
+		if(parts[0]=="param") {
+			int voiceNo = stoi(parts[1]);
+			string paramName = parts[2];
+			// value is the value
+
+
+			if(paramName=="pitchMod.lfo.wave") {
+				voices[voiceNo].pitchLFO.setType(value);
+			} else if(paramName=="filterMod.lfo.wave") {
+				voices[voiceNo].filterLFO.setType(value);
+			} else if(paramName=="ampMod.lfo.wave") {
+				voices[voiceNo].ampLFO.setType(value);
+			} else {
+				printf("here\n");
+				float val = stof(value);
+				if(paramName=="pitch") {
+					voices[voiceNo].setPitch(val);
+				} else if(paramName=="pitchMod.lfo.speed") {
+					voices[voiceNo].pitchLFO.setSpeed(val);
+				} else if(paramName=="pitchMod.lfo.depth") {
+					voices[voiceNo].pitchLFO.setDepth(val);
+				} else if(paramName=="filterMod.lfo.speed") {
+					voices[voiceNo].filterLFO.setSpeed(val);
+				} else if(paramName=="filterMod.lfo.depth") {
+					voices[voiceNo].filterLFO.setDepth(val);
+				} else if(paramName=="ampMod.lfo.speed") {
+					voices[voiceNo].ampLFO.setSpeed(val);
+				} else if(paramName=="ampMod.lfo.depth") {
+					voices[voiceNo].ampLFO.setDepth(val);
+				} else if(paramName=="level") {
+					voices[voiceNo].setAmp(val);
+				} else if(paramName=="cutoff") {
+					voices[voiceNo].setCutoff(val);
+				} else if(paramName=="resonance") {
+					voices[voiceNo].resonance = 1 + 9.f*val;
+				} else if(paramName=="ampMod.envelope.attack") {
+					voices[voiceNo].ampEnv.setAttack(val);
+				} else if(paramName=="ampMod.envelope.release") {
+					voices[voiceNo].ampEnv.setRelease(val);
+				} else if(paramName=="ampMod.envelope.curve") {
+					voices[voiceNo].ampEnv.setCurve(val);
+				} else if(paramName=="filterMod.envelope.attack") {
+					voices[voiceNo].filterEnv.setAttack(val);
+				} else if(paramName=="filterMod.envelope.release") {
+					voices[voiceNo].filterEnv.setRelease(val);
+				} else if(paramName=="filterMod.envelope.curve") {
+					voices[voiceNo].filterEnv.setCurve(val);
+				} else if(paramName=="pitchMod.envelope.attack") {
+					voices[voiceNo].pitchEnv.setAttack(val);
+				} else if(paramName=="pitchMod.envelope.release") {
+					voices[voiceNo].pitchEnv.setRelease(val);
+				} else if(paramName=="pitchMod.envelope.curve") {
+					voices[voiceNo].pitchEnv.setCurve(val);
+				}
+			}
+
+		} else if(parts[0]=="seq") {
+			printf("here\n");
+			int voiceNo = stoi(parts[1]);
+			int stepNo = stoi(parts[2]);
+			bool on = value=="true";
+			voices[voiceNo].pattern[stepNo] = on;
+			// printf("%d [%d] = %d %s\n", voiceNo, stepNo, on, parts[3].c_str());
+		}
 	}
 
 	void jsReceived(const std::string &s, const std::vector<std::string> &params) {
