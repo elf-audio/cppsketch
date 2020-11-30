@@ -1,6 +1,9 @@
 <html>
 <head>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js" integrity="sha512-bLT0Qm9VnAYZDflyKcBaQ2gg0hSYNQrJ8RilYldYQ1FxQYoCLtUjuuRuZo+fjqhx/qtq/1itJ0C2ejDxltZVFg==" crossorigin="anonymous"></script>
+	<script language="javascript" src="emscripten/em.js"></script>
+	<script language="javascript" src="emscripten/audio.js"></script>
+
 	<style type="text/css">
 		body {
 			font-family: sans-serif;
@@ -158,6 +161,7 @@ input[type=checkbox].beat {
 		
 
 		function setBeat(b) {
+			console.log("setBeat", b);
 			let pt = $("#pattern input");
 			for(let i = 0; i < pt.length; i++) {
 				if(i==b) {
@@ -168,30 +172,22 @@ input[type=checkbox].beat {
 			}
 		}
 
-
 		function sendMessage(key, value) {
 			if(window.webkit) {
 				window.webkit.messageHandlers.updateHandler.postMessage({"key": key, "value": ""+value});
 			} else {
-				console.log(key, value);
+				setParameter(key, ""+value);
+				// console.log(key, value);
 			}
 		}
 
 		function sendVoiceParameter(name, value) {
-			// if(window.webkit) {
-			// 	window.webkit.messageHandlers.updateHandler.postMessage({"function":"sendVoiceParameter", "args": [currVoice, name, value]});
-			// }
 			sendMessage("param_" + currVoice + "_" + name , value);
 		}
 	
 		function sendSequenceChange(which, value) {
-			// if(window.webkit) {
-			// 	window.webkit.messageHandlers.updateHandler.postMessage({"function":"sendSequenceChange", "args": [currVoice, which, value]});
-			// }
 			sendMessage("seq_" + currVoice + "_"+which, value);
-
 		}
-
 
 		function pointPattern(patternObj) {
 			let pt = $("#pattern input");
@@ -208,6 +204,11 @@ input[type=checkbox].beat {
 		}
 
 
+		function draw(t) {
+			if(update!=null) update();
+			requestAnimationFrame(draw);
+		}
+		draw();
 
 		let desc = [
 			// "css selector", "object in voice"
@@ -238,25 +239,14 @@ input[type=checkbox].beat {
 			['#ampMod input[name="curve"]', 	"ampMod.envelope.curve"]
 		];
 
-
-
 		function sendPresetToEngine() {
 			for(let v = 0; v < voices.length; v++) {
 				for(let i = 0; i < desc.length; i++) {
 					sendMessage("param_" + v + "_" + desc[i][1], lookUp(voices[v], desc[i][1]));
-
-					// window.webkit.messageHandlers.updateHandler.postMessage({
-					// 	"function":"sendVoiceParameter", 
-					// 	"args": [v, desc[i][1], lookUp(voices[v], desc[i][1])]
-					// });
 				}
 
 				for(let i = 0; i < voices[v].pattern.length; i++) {
 					sendMessage("seq_" + v + "_" + i, voices[v].pattern[i]);
-					// window.webkit.messageHandlers.updateHandler.postMessage({
-					// 	"function":"sendSequenceChange", 
-					// 	"args": [v, i, voices[v].pattern[i]]
-					// });
 				}
 			}
 			
@@ -315,26 +305,18 @@ input[type=checkbox].beat {
 		}
 
 
-
 		function pointToVoice(voiceId) {
 			currVoice = voiceId;
 			let v = voices[voiceId];
-			// $(document).on('input')
 			
-
 			for(let i = 0; i < desc.length; i++) {
-
 				pointToValue(voices[voiceId], desc[i][0], desc[i][1]);
 			}
-
 
 			pointPattern(voices[voiceId].pattern);
 		}
 
 		$(document).ready(function() {
-
-			// $("input[type=range]").val(0);
-
 			pointToVoice(0);
 			$("#voiceSelector").change(function() {
 				let selectedIndex = $(this).prop("selectedIndex");
@@ -344,6 +326,8 @@ input[type=checkbox].beat {
 	</script>
 </head>
 <body>
+
+<a id="startStop" href="javascript: startAudio()">start &#x25b6;</a>
 
 <a href="#" onclick="sendPresetToEngine()">SEND</a>
 	<div>

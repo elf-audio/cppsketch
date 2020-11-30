@@ -229,38 +229,25 @@ public:
 			osc.phase = 0;
 			op1.phase = 0;
 			beat = (beat+1) % 16;
-			// executeJS("beat("+std::to_string(beat)+");");
 		}
 		float out = 0;
 		for(auto &v : voices) {
 			out += v.getSample();
 		}
-		// float fff = 1.0 - fmin(pos / 4000.f, 1.0);
-		// float fff2 = 1.0 - fmin(pos / 10000.f, 1.0);
-		// fff += fff2*0.05;
-
-		// float ppp = fff * 500;
-		// float baseFreq = 50 + ppp;
-
-		// op1.freq = baseFreq * 0.5f;
-		
-		// osc.freq = baseFreq + op1.getSample()*100*fff;
+	
 		
 		pos++;
 
-		return out;//osc.getSample()*0.1*fff;
+		return out;
 	}
 	
 	int iii = 0;
 
 	void update() override {
-
 		if(sendBeat!=-1) {
 			executeJS("setBeat("+to_string(sendBeat)+")");
 			sendBeat = -1;
 		}
-
-		// iii = (iii+1) %100;
 	}
 
 
@@ -284,7 +271,7 @@ public:
 
 
 	void setParameter(const std::string &key, const std::string &value) override {
-		printf("%s = %s\n", key.c_str(), value.c_str());
+		// printf("%s = %s\n", key.c_str(), value.c_str());
 		auto parts = split(key, '_');
 		if(parts[0]=="param") {
 			int voiceNo = stoi(parts[1]);
@@ -299,7 +286,7 @@ public:
 			} else if(paramName=="ampMod.lfo.wave") {
 				voices[voiceNo].ampLFO.setType(value);
 			} else {
-				printf("here\n");
+
 				float val = stof(value);
 				if(paramName=="pitch") {
 					voices[voiceNo].setPitch(val);
@@ -352,79 +339,10 @@ public:
 		}
 	}
 
-	void jsReceived(const std::string &s, const std::vector<std::string> &params) {
-		// printf("%s\n", s.c_str());
-		if(s=="sendVoiceParameter") {
-			if(params.size()!=3) {
-				printf("Error, sendParameter should have 3 parameters\n");
-			} else {
-				int voiceNo = stof(params[0]);
-				std::string paramName = params[1];
-				if(paramName=="pitchMod.lfo.wave") {
-					voices[voiceNo].pitchLFO.setType(params[2]);
-				} else if(paramName=="filterMod.lfo.wave") {
-					voices[voiceNo].filterLFO.setType(params[2]);
-				} else if(paramName=="ampMod.lfo.wave") {
-					voices[voiceNo].ampLFO.setType(params[2]);
-				} else {
-					float value = stof(params[2]);
-					if(paramName=="pitch") {
-						voices[voiceNo].setPitch(value);
-					} else if(paramName=="pitchMod.lfo.speed") {
-						voices[voiceNo].pitchLFO.setSpeed(value);
-					} else if(paramName=="pitchMod.lfo.depth") {
-						voices[voiceNo].pitchLFO.setDepth(value);
-					} else if(paramName=="filterMod.lfo.speed") {
-						voices[voiceNo].filterLFO.setSpeed(value);
-					} else if(paramName=="filterMod.lfo.depth") {
-						voices[voiceNo].filterLFO.setDepth(value);
-					} else if(paramName=="ampMod.lfo.speed") {
-						voices[voiceNo].ampLFO.setSpeed(value);
-					} else if(paramName=="ampMod.lfo.depth") {
-						voices[voiceNo].ampLFO.setDepth(value);
-					} else if(paramName=="level") {
-						voices[voiceNo].setAmp(value);
-					} else if(paramName=="cutoff") {
-						voices[voiceNo].setCutoff(value);
-					} else if(paramName=="resonance") {
-						voices[voiceNo].resonance = 1 + 9.f*value;
-					} else if(paramName=="ampMod.envelope.attack") {
-						voices[voiceNo].ampEnv.setAttack(value);
-					} else if(paramName=="ampMod.envelope.release") {
-						voices[voiceNo].ampEnv.setRelease(value);
-					} else if(paramName=="ampMod.envelope.curve") {
-						voices[voiceNo].ampEnv.setCurve(value);
-					} else if(paramName=="filterMod.envelope.attack") {
-						voices[voiceNo].filterEnv.setAttack(value);
-					} else if(paramName=="filterMod.envelope.release") {
-						voices[voiceNo].filterEnv.setRelease(value);
-					} else if(paramName=="filterMod.envelope.curve") {
-						voices[voiceNo].filterEnv.setCurve(value);
-					} else if(paramName=="pitchMod.envelope.attack") {
-						voices[voiceNo].pitchEnv.setAttack(value);
-					} else if(paramName=="pitchMod.envelope.release") {
-						voices[voiceNo].pitchEnv.setRelease(value);
-					} else if(paramName=="pitchMod.envelope.curve") {
-						voices[voiceNo].pitchEnv.setCurve(value);
-					}
-				}
-				printf("sendParameter(%d, '%s', %s);\n", voiceNo, paramName.c_str(), params[2].c_str());
-			}
-		} else if(s=="sendSequenceChange") {
-			int voiceNo = stoi(params[0]);
-			int which = stoi(params[1]);
-			int on = stoi(params[2]);
-			printf("seqChange(%d, %d, %d)\n", voiceNo, which, on);
-			voices[voiceNo].pattern[which] = on;
-		} else {
-			printf("Unhandled %s\n", s.c_str());
-		}
-	}
 
 	void audioOut(float *samples, int length, int numChans) override {
 		for(int i = 0; i < length; i++) {
 			samples[i*2] = samples[i*2+1] = getSample();
-			
 		}
 	}	
 };
