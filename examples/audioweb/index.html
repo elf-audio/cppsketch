@@ -9,36 +9,24 @@
 			font-family: sans-serif;
 			font-size: 80%;
 		}
-		.modulation {
+		.section {
 			border:1px #aaa solid;
 			width:30%;
 			padding:0.5em;
 			margin-right: 0.3em;
-			display:inline-block;
-		}
-
-		.lfo, .envelope, .value {
-			border:1px #ccc solid;
-			padding:0.5em;
+			float: left;
 			display:grid;
 			grid-row-gap: 0.5em;
-
+			margin-top: 1em;
 			grid-template-columns: 25% 55% 20%;
 		}
-		.lfo h3, .envelope h3, .value h3 {
+		
+		.section h2 {
 			grid-column: 1/4;
-		}
-		h2 {
-			margin:0;
-		}
-		h3 {
-			margin:-0.45em -0.45em 0 -0.45em;
-			padding:0.5em;
 			background-color:#eeeeee;
-
-		}
-		.envelope, .lfo, .value {
-			margin-top: 0.5em;
+		
+			margin:0;
+			padding:0.5em;
 		}
 		
 		.patternDivider {
@@ -71,8 +59,21 @@
 			border-radius: 0.25em;
 		}
 
-
-
+		#voiceSelector {
+			padding:0;
+		}
+		
+		#voiceSelector li {
+			display:inline-block;
+			width: 8%;
+			border: 1px gray solid;
+			text-align:center;
+			padding: 1em;
+			cursor:pointer;
+		}
+		#voiceSelector li.selected {
+			background-color: #aaa;
+		}
 
 
 
@@ -110,41 +111,9 @@ input[type=checkbox].beat {
 	<script language="javascript">
 
 		
-
-		class Envelope {
-			constructor() {
-				this.attack = 0.0;
-				this.release = 0.0;
-				this.curve = 0.0;
-			}
-		}
-
-
-		class LFO {
-			constructor() {
-				this.speed = 0.0;
-				this.depth = 0.0;
-				this.wave = "SINE";
-			}
-		}
-
-
-		class Modulation {
-			constructor() {
-				this.lfo = new LFO();
-				this.envelope = new Envelope();
-			}
-		}
-		
 		class Voice { 
 			constructor() {
-				this.pitch = 0.0;
-				this.cutoff = 0.0;
-				this.resonance = 0.0;
-				this.level = 0.7;
-				this.pitchMod = new Modulation();
-				this.filterMod = new Modulation();
-				this.ampMod = new Modulation();
+				this.parameters = {};
 				this.pattern = [];
 				for(let i = 0; i < 16; i++) {
 					this.pattern.push(0);
@@ -176,7 +145,9 @@ input[type=checkbox].beat {
 			if(window.webkit) {
 				window.webkit.messageHandlers.updateHandler.postMessage({"key": key, "value": ""+value});
 			} else {
-				setParameter(key, ""+value);
+				if(setParameter!=null) {
+					setParameter(key, ""+value);
+				}
 				// console.log(key, value);
 			}
 		}
@@ -210,35 +181,6 @@ input[type=checkbox].beat {
 		}
 		draw();
 
-		let desc = [
-			// "css selector", "object in voice"
-			['#pitchMod input[name="pitch"]', 	"pitch"],
-			['#pitchMod input[name="speed"]', 	"pitchMod.lfo.speed"],
-			['#pitchMod input[name="depth"]', 	"pitchMod.lfo.depth"],
-			['#pitchMod input[name="attack"]', 	"pitchMod.envelope.attack"],
-			['#pitchMod input[name="release"]', "pitchMod.envelope.release"],
-			['#pitchMod input[name="curve"]',   "pitchMod.envelope.curve"],
-			['#pitchMod select[name="wave"]', 	"pitchMod.lfo.wave"],
-
-
-			['#filterMod input[name="cutoff"]', 	"cutoff"],
-			['#filterMod input[name="resonance"]', 	"resonance"],
-			['#filterMod input[name="speed"]', 		"filterMod.lfo.speed"],
-			['#filterMod input[name="depth"]', 		"filterMod.lfo.depth"],
-			['#filterMod input[name="attack"]', 	"filterMod.envelope.attack"],
-			['#filterMod input[name="release"]', 	"filterMod.envelope.release"],
-			['#filterMod input[name="curve"]', 		"filterMod.envelope.curve"],
-			['#filterMod select[name="wave"]',   	"filterMod.lfo.wave"],
-
-			['#ampMod input[name="level"]', 	"level"],
-			['#ampMod input[name="speed"]', 	"ampMod.lfo.speed"],
-			['#ampMod input[name="depth"]', 	"ampMod.lfo.depth"],
-			['#ampMod select[name="wave"]',   	"ampMod.lfo.wave"],
-			['#ampMod input[name="attack"]', 	"ampMod.envelope.attack"],
-			['#ampMod input[name="release"]', 	"ampMod.envelope.release"],
-			['#ampMod input[name="curve"]', 	"ampMod.envelope.curve"]
-		];
-
 		function sendPresetToEngine() {
 			for(let v = 0; v < voices.length; v++) {
 				for(let i = 0; i < desc.length; i++) {
@@ -252,7 +194,6 @@ input[type=checkbox].beat {
 			
 		}
 
-		// console.log(JSON.stringify(voices));
 
 		jQuery.fn.tagName = function() {
 			return this.prop("tagName");
@@ -285,16 +226,18 @@ input[type=checkbox].beat {
 			if(isSlider(el)) {
 				el.on('input', function(){
 					let val = $(this).val() / 100.0;
-					// voiceObj[attr] = val;
 					assign(obj, id, val);
 					$(this).next(".readout").html(""+val.toPrecision(2));
 					sendVoiceParameter(id, val);
-					console.log(voices[0]);
 				});
 				let v = lookUp(obj, id);
 
+				if(v===undefined) {
+					v = 0.0;
+				}
 				el.val(v*100.0);
 				el.next(".readout").html("" + v);
+
 			} else if(el.tagName()=="SELECT") {
 				el.on('change', function() {
 					assign(obj, id, el.val());
@@ -304,13 +247,16 @@ input[type=checkbox].beat {
 			}
 		}
 
+		
+
 
 		function pointToVoice(voiceId) {
 			currVoice = voiceId;
 			let v = voices[voiceId];
-			
-			for(let i = 0; i < desc.length; i++) {
-				pointToValue(voices[voiceId], desc[i][0], desc[i][1]);
+			let params = $(".parameter");
+			for(let i = 0; i < params.length; i++) {
+				let id = $(params[i]).attr("id");
+				pointToValue(voices[voiceId], "#"+id, id);
 			}
 
 			pointPattern(voices[voiceId].pattern);
@@ -318,168 +264,138 @@ input[type=checkbox].beat {
 
 		$(document).ready(function() {
 			pointToVoice(0);
-			$("#voiceSelector").change(function() {
-				let selectedIndex = $(this).prop("selectedIndex");
+			$("#voiceSelector li").click(function() {
+				let selectedIndex = $(this).index();
+				let options = $("#voiceSelector li");
+				for(let i = 0; i < options.length; i++) {
+					if(i==selectedIndex) {
+						$(options[i]).addClass("selected");
+					} else {
+						$(options[i]).removeClass("selected");
+					}
+				}
+				// console.log(selectedIndex);
 				pointToVoice(selectedIndex);
 			});
+
+
+
+
+			let globals = $(".global");
+			for(let i = 0; i < globals.length; i++) {
+				// console.log($(globals[i]).attr("id"));
+
+				$(globals[i]).on('input', function() {
+					let val = $(this).val() / 100.0;
+					$(this).next(".readout").html(""+val.toPrecision(2));
+					sendMessage("glob_" + $(this).attr("id"), val);
+				});
+			}
+
+
 		});
 	</script>
 </head>
 <body>
 
+
 <a id="startStop" href="javascript: startAudio()">start &#x25b6;</a>
 
 <a href="#" onclick="sendPresetToEngine()">SEND</a>
 	<div>
-		<div>
-			<select id="voiceSelector">
-				<option>Voice 1</option>
-				<option>Voice 2</option>
-				<option>Voice 3</option>
-				<option>Voice 4</option>
-				<option>Voice 5</option>
-				<option>Voice 6</option>
-			</select>
+
+		<ul id="voiceSelector">
+			<li class="selected">Voice 1</li>
+			<li>Voice 2</li>
+			<li>Voice 3</li>
+			<li>Voice 4</li>
+			<li>Voice 5</li>
+			<li>Voice 6</li>
+		</ul>
+		<div class="section">		
+			<label>delay time</label>
+			<input type="range" id="delayTime" class="global" step="0.1"/>
+			<div class="readout">0.0</div>
+
+			<label>delay feedback</label>
+			<input type="range" id="delayFeedback" class="global" step="0.1"/>
+			<div class="readout">0.0</div>
+
+			<label>delay level</label>
+			<input type="range" id="delayLevel" class="global" step="0.1"/>
+			<div class="readout">0.0</div>
+			<label>bpm</label>
+			<input type="range" id="bpm" class="global" min="4000" max="24000" step="0.1"/>
+			<div class="readout">0.0</div>
 		</div>
-		<div class="modulation" id="pitchMod">
+
+		<div class="section">
 			<h2>Pitch</h2>
 
-			<div class="value">
-				<label>Pitch</label>
-				<input type="range" name="pitch" step="0.1"/>
-				<div class="readout">0.0</div>
-			</div>
+			<label>Pitch</label>
+			<input type="range" id="pitch" class="parameter" step="0.1"/>
+			<div class="readout">0.0</div>
 
-			<div class="lfo">
-				
-				<h3>LFO</h3>
-				<label>Speed</label>
-				<input type="range" name="speed" />
-				<div class="readout">0.0</div>
+			<label>Env amt</label>
+			<input type="range" id="pitchModAmt" class="parameter" step="0.1"/>
+			<div class="readout">0.0</div>
 
-				<label>Depth</label>
-				<input type="range" name="depth" />
-				<div class="readout">0.0</div>
-
-				<label>Wave</label>
-				<select name="wave">
-					<option>SINE</option>
-					<option>SQUARE</option>
-					<option>RANDOM</option>
-				</select>
-
-			</div>
-
-			<div class="envelope">
-				<h3>Envelope</h3>
-
-				<label>Attack</label>
-				<input type="range" name="attack" />
-				<div class="readout">0.0</div>
-
-				<label>Release</label>
-				<input type="range" name="release" />
-				<div class="readout">0.0</div>
-
-				<label>Curve</label>
-				<input type="range" name="curve" />
-				<div class="readout">0.0</div>
-			</div>
+			<label>release</label>
+			<input type="range" id="pitchRelease" class="parameter" step="0.1"/>
+			<div class="readout">0.0</div>
+			
 		</div>
 
-		<div class="modulation" id="filterMod">
-			<h2>Filter</h2>
+	
+		<div class="section">
+			<h2>FM</h2>
 
-			<div class="value">
-				<label>Cutoff</label>
-				<input type="range" name="cutoff" />
-				<div class="readout">0.0</div>
-				<label>Res</label>
-				<input type="range" name="resonance" />
-				<div class="readout">0.0</div>
-			</div>
+			<label>Ratio</label>
+			<input type="range" id="ratio" class="parameter" step="0.1" />
+			<div class="readout">0.0</div>
 
+			<label>Amount</label>
+			<input type="range" id="fmAmt" class="parameter" step="0.1" />
+			<div class="readout">0.0</div>
 
-			<div class="lfo">
-				<h3>LFO</h3>
+			<label>Feedback</label>
+			<input type="range" id="fmFeedback" class="parameter" step="0.1"/>
+			<div class="readout">0.0</div>
 
-				<label>Speed</label>
-				<input type="range" name="speed" />
-				<div class="readout">0.0</div>
-
-				<label>Depth</label>
-				<input type="range" name="depth" />
-				<div class="readout">0.0</div>
-
-				<label>Wave</label>
-				<select name="wave">
-					<option>SINE</option>
-					<option>SQUARE</option>
-					<option>RANDOM</option>
-				</select>
-
-			</div>
-			<div class="envelope">
-				<h3>Envelope</h3>
-
-				<label>Attack</label>
-				<input type="range" name="attack" />
-				<div class="readout">0.0</div>
-
-				<label>Release</label>
-				<input type="range" name="release" />
-				<div class="readout">0.0</div>
-
-				<label>Curve</label>
-				<input type="range" name="curve" />
-				<div class="readout">0.0</div>
-			</div>
+			<label>Release</label>
+			<input type="range" id="fmRelease" class="parameter" step="0.1" />
+			<div class="readout">0.0</div>
 		</div>
 
-		<div class="modulation" id="ampMod">
+
+		<div class="section">
 			<h2>Amplitude</h2>
-			<div class="value">
-				<label>Level</label>
-				<input type="range" name="level" />
-				<div class="readout">0.0</div>
-			</div>
-			<div class="lfo">
-				<h3>LFO</h3>
 
-				<label>Speed</label>
-				<input type="range" name="speed" />
-				<div class="readout">0.0</div>
+			<label>Level</label>
+			<input type="range" id="level" class="parameter" step="0.1" />
+			<div class="readout">0.0</div>
 
-				<label>Depth</label>
-				<input type="range" name="depth" />
-				<div class="readout">0.0</div>
+			<label>Pan</label>
+			<input type="range" id="pan" class="parameter" step="0.1" />
+			<div class="readout">0.0</div>
 
-				<label>Wave</label>
-				<select name="wave">
-					<option>SINE</option>
-					<option>SQUARE</option>
-					<option>RANDOM</option>
-				</select>
+			<label>Attack</label>
+			<input type="range" id="attack" class="parameter" step="0.1" />
+			<div class="readout">0.0</div>
 
-			</div>
-			<div class="envelope">
-				<h3>Envelope</h3>
+			<label>Release</label>
+			<input type="range" id="release" class="parameter" step="0.1" />
+			<div class="readout">0.0</div>
 
-				<label>Attack</label>
-				<input type="range" name="attack" />
-				<div class="readout">0.0</div>
 
-				<label>Release</label>
-				<input type="range" name="release" />
-				<div class="readout">0.0</div>
 
-				<label>Curve</label>
-				<input type="range" name="curve" />
-				<div class="readout">0.0</div>
-			</div>
+			<label>Reverb send</label>
+			<input type="range" id="reverbSend" class="parameter" step="0.1" />
+			<div class="readout">0.0</div>
+			<label>Delay send</label>
+			<input type="range" id="delaySend" class="parameter" step="0.1" />
+			<div class="readout">0.0</div>
 		</div>
-
-
 	</div>
 	<div id="pattern">
 		<div class="patternDivider">
