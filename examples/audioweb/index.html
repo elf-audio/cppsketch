@@ -7,14 +7,13 @@
 	<style type="text/css">
 		body {
 			font-family: sans-serif;
-			font-size: 80%;
+			font-size: 70%;
 		}
 		.section {
 			border:1px #aaa solid;
 			width:30%;
 			padding:0.5em;
 			margin-right: 0.3em;
-			float: left;
 			display:grid;
 			grid-row-gap: 0.5em;
 			margin-top: 1em;
@@ -29,19 +28,57 @@
 			padding:0.5em;
 		}
 		
+
+
+
+
+
 		.patternDivider {
-			width: 100%;
-			border: 1px black solid;
+			padding:0;
+			background-color: #eee;
+			display:flex;
 		}
+		.patternDivider:nth-child(odd) {
+			background-color: #ddd;
+		}
+
 		#pattern {
 			display: flex;
-			justify-content: space-between;
-			border: 1px black solid;
-			padding: 0.5em;
-			margin: 0.5em;
-			margin-left:0;
-			width: 90%;
+			-webkit-user-select: none;
+			-moz-user-select: none;
+			-ms-user-select: none;
+			user-select: none;
 		}
+		
+		.checkbox {
+			margin:0.5em;
+			width: 2em;
+			height: 2em;
+			border:1px black solid;
+		}
+		.checked {
+			background-color: #cc3333;
+		}
+
+		.unchecked {
+			background-color: #bbbbbb;
+		}
+		#pattern .beat {
+			background-color: #33dd33;
+		}
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 		label {
 			width: 20%;
@@ -61,22 +98,28 @@
 
 		#voiceSelector {
 			padding:0;
+			border-bottom: 1px gray solid;
+			padding-bottom: -1px;
 		}
 		
 		#voiceSelector li {
 			display:inline-block;
 			width: 8%;
-			border: 1px gray solid;
+			border-radius: 0.5em 0.5em 0 0;
+			background-color:#eee;
 			text-align:center;
 			padding: 1em;
 			cursor:pointer;
 		}
 		#voiceSelector li.selected {
-			background-color: #aaa;
+			background-color: #999;
+			color:white;
 		}
 
 
-
+#controls {
+	display: flex;
+}
 
 /************************************************/
 input[type=checkbox] {
@@ -132,11 +175,14 @@ input[type=checkbox].beat {
 		function setBeat(b) {
 			console.log("setBeat", b);
 			let pt = $("#pattern input");
+			let di = $("#pattern .checkbox");
 			for(let i = 0; i < pt.length; i++) {
 				if(i==b) {
 					$(pt[i]).addClass("beat");
+					$(di[i]).addClass("beat");
 				} else { 
 					$(pt[i]).removeClass("beat");
+					$(di[i]).removeClass("beat");
 				}
 			}
 		}
@@ -162,9 +208,15 @@ input[type=checkbox].beat {
 
 		function pointPattern(patternObj) {
 			let pt = $("#pattern input");
-
+			let di = $("#pattern .checkbox");
 			for(let i = 0; i < pt.length; i++) {
+
 				$(pt[i]).prop("checked", patternObj[i]!=0);
+				if(patternObj[i]!=0) {
+					$(di[i]).addClass("checked").removeClass("unchecked");
+				} else {
+					$(di[i]).addClass("unchecked").removeClass("checked");
+				}
 				$(pt[i]).off();
 				$(pt[i]).on("click", function() {
 					let val = $(this).prop("checked");
@@ -302,8 +354,6 @@ input[type=checkbox].beat {
 <a id="startStop" href="javascript: startAudio()">start &#x25b6;</a>
 
 <a href="#" onclick="sendPresetToEngine()">SEND</a>
-	<div>
-
 		<ul id="voiceSelector">
 			<li class="selected">Voice 1</li>
 			<li>Voice 2</li>
@@ -312,7 +362,11 @@ input[type=checkbox].beat {
 			<li>Voice 5</li>
 			<li>Voice 6</li>
 		</ul>
+	<div id="controls">
+
+		
 		<div class="section">		
+			<h2>Global</h2>
 			<label>delay time</label>
 			<input type="range" id="delayTime" class="global" step="0.1"/>
 			<div class="readout">0.0</div>
@@ -423,6 +477,25 @@ input[type=checkbox].beat {
 			<input type="checkbox" />
 		</div>
 	</div>
+	<style type="text/css">
+		
+	</style>
+	<script language="javascript">
+		$("input[type=checkbox]").each(function() {
+			let chb = $(this);
+			$('<div class="checkbox unchecked"></div>').mousedown(function() {
+				chb.click();
+				$(this).removeClass('checked').removeClass('unchecked').addClass( chb.is(':checked') ? 'checked' : 'unchecked' );
+			}).on('mouseenter', function(e) {
+				if(e.buttons==1) {
+					chb.click();
+					$(this).removeClass('checked').removeClass('unchecked').addClass( chb.is(':checked') ? 'checked' : 'unchecked' );
+				}
+			}).insertAfter(chb);
+			chb.hide();
+		});
+	</script>
+
 	<pre>
 		
 		What I would like:
