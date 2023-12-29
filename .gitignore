@@ -31,3 +31,5 @@
 examples/simple/simple
 examples/audio/audio
 examples/tetris/tetris
+.vscode/settings.json
+build
