@@ -30,23 +30,21 @@
 #include <filesystem>
 namespace fs = std::filesystem;
 
-using namespace std;
-
 template <class T>
 class ReloadableClass {
 public:
 	Dylib dylib;
 
 	FileWatcher watcher;
-	string path;
+	std::string path;
 
-	function<void(T *)> reloaded;
-	function<void()> willCloseDylib;
+	std::function<void(T *)> reloaded;
+	std::function<void()> willCloseDylib;
 
-	function<void(const string &)> reloadFailed;
-	vector<string> includePaths;
-	string prefixHeader;
-	string cppFile = "";
+	std::function<void(const std::string &)> reloadFailed;
+	std::vector<std::string> includePaths;
+	std::string prefixHeader;
+	std::string cppFile = "";
 
 	/**
 	 * Parameters:
@@ -54,7 +52,9 @@ public:
 	 *  includePaths - optional all the paths to include
 	 *  headerToPrecompile - optional - if you pass in a main header file, it will be precompiled for faster loading times.
 	 */
-	void init(const string &path, const vector<string> &includePaths = {}, const string &headerToPrecompile = "") {
+	void init(const std::string &path,
+			  const std::vector<std::string> &includePaths = {},
+			  const std::string &headerToPrecompile		   = "") {
 		liveCodeUtils::init();
 		this->includePaths = includePaths;
 		this->path		   = findFile(path);
@@ -77,29 +77,29 @@ public:
 
 	void checkForChanges() { watcher.tick(); }
 
-	string getCppFileForHeader(string p) {
+	std::string getCppFileForHeader(std::string p) {
 		int lastDot = p.rfind('.');
 		if (lastDot == -1) return "";
-		string cpp = p.substr(0, lastDot) + ".cpp";
+		std::string cpp = p.substr(0, lastDot) + ".cpp";
 		printf("cpp file is at %s\n", cpp.c_str());
 		if (fs::exists(cpp)) return cpp;
 		return "";
 	}
 
-	void precompileHeader(const string &headerToPrecompile) {
-		string cmd = "g++ -std=c++11 -x c++-header -stdlib=libc++ "
-					 + liveCodeUtils::includeListToCFlags(includePaths) + " " + headerToPrecompile;
+	void precompileHeader(const std::string &headerToPrecompile) {
+		std::string cmd = "g++ -std=c++11 -x c++-header -stdlib=libc++ "
+						  + liveCodeUtils::includeListToCFlags(includePaths) + " " + headerToPrecompile;
 		printf("Precompiling headers: %s\n", cmd.c_str());
 		liveCodeUtils::execute(cmd);
 	}
 
 private:
-	string lastErrorStr;
+	std::string lastErrorStr;
 	void recompile() {
 		//printf("Need to recompile %s\n", path.c_str());
 		float t = liveCodeUtils::getSeconds();
 
-		string dylibPath = cc();
+		std::string dylibPath = cc();
 		if (dylibPath != "") {
 			auto *obj = loadDylib(dylibPath);
 			if (obj != nullptr) {
@@ -118,8 +118,8 @@ private:
 		}
 	}
 
-	string getAllIncludes() {
-		string userIncludes = liveCodeUtils::includeListToCFlags(includePaths);
+	std::string getAllIncludes() {
+		std::string userIncludes = liveCodeUtils::includeListToCFlags(includePaths);
 		return " -I. " //getAllIncludes(string(SRCROOT))
 			   + userIncludes
 			// this is the precomp header + " -include " + string(LIBROOT) + "/mzgl/App.h"
@@ -128,34 +128,34 @@ private:
 			;
 	}
 
-	string cc() {
+	std::string cc() {
 		// call our makefile
-		string objectName = getObjectName(path);
-		string objFile	  = "/tmp/" + objectName + ".o";
-		string cppFile	  = "/tmp/" + objectName + ".cpp";
-		string dylibPath  = "/tmp/" + objectName + ".dylib";
+		std::string objectName = getObjectName(path);
+		std::string objFile	   = "/tmp/" + objectName + ".o";
+		std::string cppFile	   = "/tmp/" + objectName + ".cpp";
+		std::string dylibPath  = "/tmp/" + objectName + ".dylib";
 		makeCppFile(cppFile, objectName);
 
-		string includes = getAllIncludes();
+		std::string includes = getAllIncludes();
 
-		string prefixHeaderFlag = "";
+		std::string prefixHeaderFlag = "";
 		if (prefixHeader != "") {
 			prefixHeaderFlag = "-include " + prefixHeader + " ";
 		}
-		string cppFlags = "";
+		std::string cppFlags = "";
 
 #ifdef __APPLE__
 		cppFlags += " -stdlib=libc++ ";
 #endif
-		string cmd = "g++ -g -std=c++11 " + cppFlags + " " + prefixHeaderFlag + " -Wno-deprecated-declarations -c "
-					 + cppFile + " -o " + objFile + " " + includes;
+		std::string cmd = "g++ -g -std=c++11 " + cppFlags + " " + prefixHeaderFlag
+						  + " -Wno-deprecated-declarations -c " + cppFile + " -o " + objFile + " " + includes;
 
-		int exitCode = 0;
-		string res	 = liveCodeUtils::execute(cmd, &exitCode);
+		int exitCode	= 0;
+		std::string res = liveCodeUtils::execute(cmd, &exitCode);
 
 		//printf("Exit code : %d\n", exitCode);
 		if (exitCode == 0) {
-			string linkerFlags = "";
+			std::string linkerFlags = "";
 #ifdef __APPLE__
 			linkerFlags += " -dynamiclib -undefined dynamic_lookup ";
 #else
@@ -170,16 +170,16 @@ private:
 		}
 	}
 
-	void makeCppFile(string path, string objName) {
-		ofstream outFile(path.c_str());
+	void makeCppFile(std::string path, std::string objName) {
+		std::ofstream outFile(path.c_str());
 
 		outFile << "#include \"" + objName + ".h\"\n\n";
 		outFile << "extern \"C\" {\n\n";
 		outFile << "\n\nvoid *getPluginPtr() {return new " + objName + "(); };\n\n";
 		if (cppFile != "") {
 			// include the contents of the cpp file if it exists
-			ifstream inFile(cppFile);
-			string line;
+			std::ifstream inFile(cppFile);
+			std::string line;
 			if (inFile.is_open()) {
 				while (getline(inFile, line)) {
 					outFile << line << '\n';
@@ -194,7 +194,7 @@ private:
 		outFile.close();
 	}
 
-	string getObjectName(string p) {
+	std::string getObjectName(std::string p) {
 		// split on last '/'
 		int indexOfLastSlash = p.rfind('/');
 		if (indexOfLastSlash != -1) {
@@ -209,7 +209,7 @@ private:
 		return p;
 	}
 
-	T *loadDylib(string dylibPath) {
+	T *loadDylib(std::string dylibPath) {
 		if (dylib.isOpen()) {
 			if (willCloseDylib) willCloseDylib();
 			dylib.close();
@@ -222,7 +222,7 @@ private:
 	}
 
 	/////////////////////////////////////////////////////////
-	fs::path findFile(string file) {
+	fs::path findFile(std::string file) {
 		fs::path f(file);
 		if (fs::exists(f)) return f;
 		f = "src" / f;

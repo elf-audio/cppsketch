@@ -8,15 +8,18 @@
 
 LiveAudio *audio = nullptr;
 
-mutex audioMutex;
+std::mutex audioMutex;
 
 // Two-channel sawtooth wave generator.
-int audioOutCallback( void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames,
-         double streamTime, RtAudioStreamStatus status, void *userData) {
-
-	float *output = (float*) outputBuffer;
+int audioOutCallback(void *outputBuffer,
+					 void *inputBuffer,
+					 unsigned int nBufferFrames,
+					 double streamTime,
+					 RtAudioStreamStatus status,
+					 void *userData) {
+	float *output = (float *) outputBuffer;
 	audioMutex.lock();
-	if(audio) {
+	if (audio) {
 		audio->audioOut(output, nBufferFrames, 2);
 	} else {
 		memset(output, 0, nBufferFrames * 2 * sizeof(float));
@@ -25,29 +28,25 @@ int audioOutCallback( void *outputBuffer, void *inputBuffer, unsigned int nBuffe
 	return 0;
 }
 
-
 RtAudio rtAudio;
 
 void startRtAudio() {
-	
 	RtAudio::StreamParameters parameters;
-	parameters.deviceId = rtAudio.getDefaultOutputDevice();
-	parameters.nChannels = 2;
-	parameters.firstChannel = 0;
+	parameters.deviceId		  = rtAudio.getDefaultOutputDevice();
+	parameters.nChannels	  = 2;
+	parameters.firstChannel	  = 0;
 	unsigned int bufferFrames = 256; // 256 sample frames
-	
+
 	try {
-		rtAudio.openStream( &parameters, NULL, RTAUDIO_FLOAT32, 44100, &bufferFrames, &audioOutCallback, nullptr );
+		rtAudio.openStream(&parameters, NULL, RTAUDIO_FLOAT32, 44100, &bufferFrames, &audioOutCallback, nullptr);
 		rtAudio.startStream();
-	} catch ( RtAudioError& e ) {
+	} catch (RtAudioError &e) {
 		e.printMessage();
-		exit( 0 );
+		exit(0);
 	}
 }
 
-
-int main(int argc, char * argv[]) {
-
+int main(int argc, char *argv[]) {
 	ReloadableClass<LiveAudio> dylib;
 
 	dylib.willCloseDylib = []() {
@@ -61,17 +60,15 @@ int main(int argc, char * argv[]) {
 		audio->setup();
 		audioMutex.unlock();
 	};
-	
+
 	dylib.init("MyLiveAudio.h");
-	
 
 	startRtAudio();
 
-	while(1) {
-		
+	while (1) {
 		dylib.checkForChanges();
-		
-		usleep(1000*1000);
+
+		usleep(1000 * 1000);
 	}
 
 	return 0;

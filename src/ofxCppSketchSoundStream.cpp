@@ -8,9 +8,7 @@
 #include "ofxCppSketchSoundStream.h"
 #include "ofxCppSketch.h"
 
-
-
-ofxCppSketchSoundStream::ofxCppSketchSoundStream() : ofSoundStream() {
+ofxCppSketchSoundStream::ofxCppSketchSoundStream()
+	: ofSoundStream() {
 	setSoundStream(ofxCppSketch::getSoundStream());
 }
-
