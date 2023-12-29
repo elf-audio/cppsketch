@@ -2,7 +2,7 @@ CPPFILES = ../../src/Dylib.cpp ../../src/FileWatcher.cpp ../../src/liveCodeUtils
 
 
 
-CPPFLAGS =  -std=c++14 
+CPPFLAGS =  -std=c++20
 ifeq ($(OS),Windows_NT)
 	
 else
